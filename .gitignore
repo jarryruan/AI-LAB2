@@ -11,4 +11,4 @@ __pycache__/
 # Intellij IDEA
 out/
 *.class
-.idea/workspace.xml
+workspace.xml

@@ -1,8 +1,8 @@
 public class Template {
     private String prefix;
-    private int[][] context;
+    private int[] context;
 
-    public Template(String prefix, int[][] context) {
+    public Template(String prefix, int[] context) {
         this.prefix = prefix;
         this.context = context;
     }
@@ -15,22 +15,21 @@ public class Template {
         this.prefix = prefix;
     }
 
-    public int[][] getContext() {
+    public int[] getContext() {
         return context;
     }
 
-    public void setContext(int[][] context) {
+    public void setContext(int[] context) {
         this.context = context;
     }
 
-    public String feature(DataSet dataSet, int index){
+    public String feature(Sentence sentence, int index){
         StringBuilder stringBuilder = new StringBuilder(prefix);
         stringBuilder.append(':');
 
         for(int i = 0;i < context.length; i++){
-            int row = index + context[i][0];
-            int column = context[i][1];
-            stringBuilder.append(dataSet.get(row, column));
+            int row = index + context[i];
+            stringBuilder.append(sentence.getWord(row));
             if(i != context.length - 1)
                 stringBuilder.append('/');
         }

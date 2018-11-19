@@ -2,11 +2,11 @@ import java.io.FileNotFoundException;
 
 public class Main {
     private final static Template[] templates = new Template[]{
-            new Template("U00", new int[][]{{-2, 0}}),
-            new Template("U01", new int[][]{{-1, 0}}),
-            new Template("U02", new int[][]{{0, 0}}),
-            new Template("U03", new int[][]{{1, 0}}),
-            new Template("U04", new int[][]{{2, 0}})
+            new Template("U00", new int[]{-2}),
+            new Template("U01", new int[]{-1}),
+            new Template("U02", new int[]{0}),
+            new Template("U03", new int[]{1}),
+            new Template("U04", new int[]{2}),
     };
 
     private final static String[] tags = new String[]{

@@ -11,7 +11,7 @@ public class CRFModel {
     private String[] tags;
     private DataSet dataSet;
     private Map<String, Sensor> sensors;
-    private String[] outputs;
+    private String[][] outputs;
 
     public CRFModel(int batchSize, int numberOfWorker, Template[] templates, String[] tags, DataSet dataSet) {
         this.batchSize = batchSize;
@@ -20,11 +20,7 @@ public class CRFModel {
         this.tags = tags;
         this.dataSet = dataSet;
         this.sensors = new HashMap<>();
-
-        this.outputs = new String[dataSet.numberOfRows()];
-        for(int i = 0; i < outputs.length; i++)
-            outputs[i] = tags[0];
-
+        this.outputs = new String[dataSet.numberOfSentences()][];
         initSensors();
     }
 
@@ -44,23 +40,27 @@ public class CRFModel {
         return dataSet;
     }
 
-    public String[] getOutputs() {
+    public String[][] getOutputs() {
         return outputs;
     }
 
     private void initSensors(){
-        int size = dataSet.numberOfRows();
+        int size = dataSet.numberOfSentences();
         for(Template template : templates){
             for(int i = 0; i < size; i++){
-                String feature = template.feature(dataSet, i);
-                if(!sensors.containsKey(feature))
-                    sensors.put(feature, new Sensor(feature, tags));
+                Sentence sentence = dataSet.get(i);
+                int length = sentence.length();
+                for(int j = 0; j < length; j++){
+                    String feature = template.feature(sentence, j);
+                    if(!sensors.containsKey(feature))
+                        sensors.put(feature, new Sensor(feature, tags));
+                }
             }
         }
     }
 
     public void forward() throws InterruptedException {
-        int size = dataSet.numberOfRows();
+        int size = dataSet.numberOfSentences();
         int numberOfBatch = ((size - 1) / batchSize) + 1;
 
         ExecutorService service = Executors.newFixedThreadPool(numberOfWorker);
@@ -74,14 +74,18 @@ public class CRFModel {
     }
 
     public void backward(){
-        int len = dataSet.numberOfRows();
+        int size = dataSet.numberOfSentences();
         for(Template template : templates){
-            for(int i = 0; i < len; i++){
-                String feature = template.feature(dataSet, i);
-                if(sensors.containsKey(feature)){
-                    Sensor sensor = sensors.get(feature);
-                    sensor.increase(dataSet.getTag(i), 1);
-                    sensor.increase(outputs[i], -1);
+            for(int i = 0; i < size; i++){
+                Sentence sentence = dataSet.get(i);
+                int length = sentence.length();
+                for(int j = 0; j < length; j++){
+                    String feature = template.feature(sentence, j);
+                    if(sensors.containsKey(feature)){
+                        Sensor sensor = sensors.get(feature);
+                        sensor.increase(sentence.getTag(j), 1);
+                        sensor.increase(outputs[i][j], -1);
+                    }
                 }
             }
         }
@@ -100,26 +104,34 @@ public class CRFModel {
         @Override
         public void run() {
             int start = index;
-            int end = Math.min(index + size - 1, dataSet.numberOfRows() - 1);
+            int end = Math.min(index + size - 1, dataSet.numberOfSentences() - 1);
 
             for(int i = start; i <= end; i++){
-                int maximum = Integer.MIN_VALUE;
-                String argmax = tags[0];
+                Sentence sentence = dataSet.get(i);
+                if(outputs[i] == null)
+                    outputs[i] = new String[sentence.length()];
 
-                for(String tag : tags){
-                    int score = 0;
-                    for(Template template : templates){
-                        String feature = template.feature(dataSet, i);
-                        if(sensors.containsKey(feature)){
-                            score += sensors.get(feature).evaluate(feature, tag);
+                int length = sentence.length();
+
+                for(int j = 0; j < length; j++){
+                    int maximum = Integer.MIN_VALUE;
+                    String argmax = tags[0];
+
+                    for(String tag : tags){
+                        int score = 0;
+                        for(Template template : templates){
+                            String feature = template.feature(sentence, j);
+                            if(sensors.containsKey(feature)){
+                                score += sensors.get(feature).evaluate(feature, tag);
+                            }
+                        }
+                        if(score > maximum){
+                            maximum = score;
+                            argmax = tag;
                         }
                     }
-                    if(score > maximum){
-                        maximum = score;
-                        argmax = tag;
-                    }
+                    outputs[i][j] = argmax;
                 }
-                outputs[i] = argmax;
             }
         }
     }

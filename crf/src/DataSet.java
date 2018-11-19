@@ -5,55 +5,45 @@ import java.util.List;
 import java.util.Scanner;
 
 public class DataSet {
-    private String[][] data;
-    private int numberOfColumns;
+    private Sentence[] data;
 
     public DataSet(String filename) throws FileNotFoundException {
-        List<String[]> list = new ArrayList<>();
+        List<Sentence> list = new ArrayList<>();
 
         Scanner scanner = new Scanner(new File(filename));
+
+        List<String> words = new ArrayList<>();
+        List<String> tags = new ArrayList<>();
 
         while(scanner.hasNext()){
             String line = scanner.nextLine();
 
             if(line.trim().length() > 0){
-                Scanner lineScanner = new Scanner(line);
-
-                List<String> sample = new ArrayList<>();
-
-                while(lineScanner.hasNext())
-                    sample.add(lineScanner.next());
-
-                numberOfColumns = Math.max(numberOfColumns, sample.size());
-
-                list.add(sample.toArray(new String[0]));
+                String[] segments = line.split(" ");
+                words.add(segments[0]);
+                tags.add(segments[1]);
 
             }else {
-
-                list.add(new String[]{"NIL", "S"});
+                if(!words.isEmpty()){
+                    list.add(new Sentence(words, tags));
+                    words = new ArrayList<>();
+                    tags = new ArrayList<>();
+                }
             }
         }
 
-        data = list.toArray(new String[list.size()][]);
+        if(!words.isEmpty()){
+            list.add(new Sentence(words, tags));
+        }
+
+        data = list.toArray(new Sentence[0]);
     }
 
-    public int numberOfRows(){
+    public int numberOfSentences(){
         return data.length;
     }
 
-    public int numberOfColumns(){
-        return numberOfColumns;
-    }
-
-    public String get(int i, int j){
-        try{
-            return data[i][j];
-        }catch (ArrayIndexOutOfBoundsException ex){
-            return "NIL";
-        }
-    }
-
-    public String getTag(int index){
-        return get(index, numberOfColumns - 1);
+    public Sentence get(int index){
+        return data[index];
     }
 }

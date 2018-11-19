@@ -5,8 +5,8 @@ from dataset import DataSet
 from lstm import LSTMTagger
 
 
-training_set = DataSet('train.utf8')
-model = LSTMTagger(6, 6, training_set.vocab_size(), training_set.tagset_size())
+training_set = DataSet('../dataset/train.utf8')
+model = LSTMTagger(3, 3, training_set.vocab_size(), training_set.tagset_size())
 loss_function = nn.NLLLoss()
 optimizer = optim.SGD(model.parameters(), lr=0.5)
 

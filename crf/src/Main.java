@@ -16,7 +16,7 @@ public class Main {
     private final static int epoch = 10;
 
     public static void main(String[] args) throws FileNotFoundException, InterruptedException {
-        DataSet dataSet = new DataSet("./train.utf8");
+        DataSet dataSet = new DataSet("../dataset/train.utf8");
         CRFModel model = new CRFModel(templates, tags, dataSet);
 
         for(int i = 0; i < epoch; i ++){

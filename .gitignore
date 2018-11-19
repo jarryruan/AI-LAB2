@@ -1,0 +1,14 @@
+# macOS
+.DS_Store
+
+# Visual Studio Code
+.vscode
+
+# Python
+__pycache__/
+
+
+# Intellij IDEA
+out/
+*.class
+.idea/workspace.xml

@@ -7,28 +7,34 @@ import java.util.concurrent.TimeUnit;
 public class CRFModel {
     private int batchSize;
     private int numberOfWorker;
-    private Template[] templates;
+    private Unigram[] templates;
     private String[] tags;
     private DataSet dataSet;
     private Map<String, Sensor> sensors;
     private String[][] outputs;
+    private String[][] export;
 
-    public CRFModel(int batchSize, int numberOfWorker, Template[] templates, String[] tags, DataSet dataSet) {
+    public CRFModel(int batchSize, int numberOfWorker, Unigram[] templates, String[] tags, DataSet dataSet) {
         this.batchSize = batchSize;
         this.numberOfWorker = numberOfWorker;
         this.templates = templates;
         this.tags = tags;
         this.dataSet = dataSet;
         this.sensors = new HashMap<>();
-        this.outputs = new String[dataSet.numberOfSentences()][];
+
+        int size = dataSet.numberOfSentences();
+        this.outputs = new String[size][];
+        for(int i = 0; i < size; i++)
+            outputs[i] = new String[dataSet.get(i).length()];
+
         initSensors();
     }
 
-    public CRFModel(Template[] templates, String[] tags, DataSet dataSet) {
+    public CRFModel(Unigram[] templates, String[] tags, DataSet dataSet) {
         this(100, 5, templates, tags, dataSet);
     }
 
-    public Template[] getTemplates() {
+    public Unigram[] getTemplates() {
         return templates;
     }
 
@@ -46,7 +52,7 @@ public class CRFModel {
 
     private void initSensors(){
         int size = dataSet.numberOfSentences();
-        for(Template template : templates){
+        for(Unigram template : templates){
             for(int i = 0; i < size; i++){
                 Sentence sentence = dataSet.get(i);
                 int length = sentence.length();
@@ -59,23 +65,39 @@ public class CRFModel {
         }
     }
 
-    public void forward() throws InterruptedException {
+    public String[][] apply(DataSet testSet) throws InterruptedException {
+        int size = testSet.numberOfSentences();
+        export = new String[size][];
+        for(int i = 0; i < size; i++){
+            int length = testSet.get(i).length();
+            export[i] = new String[length];
+        }
+        calc(testSet, export);
+        return export;
+    }
+
+    private void calc(DataSet dataSet, String[][] target) throws InterruptedException {
         int size = dataSet.numberOfSentences();
         int numberOfBatch = ((size - 1) / batchSize) + 1;
 
         ExecutorService service = Executors.newFixedThreadPool(numberOfWorker);
 
         for(int i = 0; i < numberOfBatch ; i++)
-            service.execute(new ForwardTask(i * batchSize, batchSize));
+            service.execute(new ForwardTask(dataSet, i * batchSize, batchSize, target));
         service.shutdown();
 
         service.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-
     }
+
+
+    public void forward() throws InterruptedException {
+        calc(dataSet, outputs);
+    }
+
 
     public void backward(){
         int size = dataSet.numberOfSentences();
-        for(Template template : templates){
+        for(Unigram template : templates){
             for(int i = 0; i < size; i++){
                 Sentence sentence = dataSet.get(i);
                 int length = sentence.length();
@@ -93,12 +115,16 @@ public class CRFModel {
 
 
     private class ForwardTask implements Runnable{
+        private DataSet dataSet;
         private int index;
         private int size;
+        private String[][] target;
 
-        public ForwardTask(int index, int size) {
+        public ForwardTask(DataSet dataSet, int index, int size, String[][] target) {
+            this.dataSet = dataSet;
             this.index = index;
             this.size = size;
+            this.target = target;
         }
 
         @Override
@@ -119,7 +145,7 @@ public class CRFModel {
 
                     for(String tag : tags){
                         int score = 0;
-                        for(Template template : templates){
+                        for(Unigram template : templates){
                             String feature = template.feature(sentence, j);
                             if(sensors.containsKey(feature)){
                                 score += sensors.get(feature).evaluate(feature, tag);
@@ -130,7 +156,7 @@ public class CRFModel {
                             argmax = tag;
                         }
                     }
-                    outputs[i][j] = argmax;
+                    target[i][j] = argmax;
                 }
             }
         }

@@ -26,7 +26,7 @@ public class Utils {
         }
     }
 
-    public static String[] loadSequence(String filename) throws FileNotFoundException {
+    public static String[] loadTags(String filename) throws FileNotFoundException {
         List<String> tags = new ArrayList<>();
 
         try(Scanner scanner = new Scanner(new File(filename))){
@@ -36,6 +36,18 @@ public class Utils {
                     tags.add(row);
             }
             return tags.toArray(new String[0]);
+        }
+    }
+
+    public static void writeOutput(String[][] output, String filename) throws IOException {
+        try(DataOutputStream out = new DataOutputStream(new FileOutputStream(filename))){
+            for(String[] sentence : output){
+                for(String tag : sentence){
+                    out.writeChars(tag);
+                    out.writeChar('\n');
+                }
+                out.writeChar('\n');
+            }
         }
     }
 

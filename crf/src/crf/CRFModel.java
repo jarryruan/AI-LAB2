@@ -58,15 +58,11 @@ public class CRFModel implements Serializable {
     public String[][] forward(DataSet testSet) throws InterruptedException {
         int size = testSet.numberOfSentences();
         String[][] export = new String[size][];
-        for(int i = 0; i < size; i++){
-            int length = testSet.get(i).length();
-            export[i] = new String[length];
-        }
-        forward(testSet, export);
+        calc(testSet, export);
         return export;
     }
 
-    private void forward(DataSet dataSet, String[][] target) throws InterruptedException {
+    private void calc(DataSet dataSet, String[][] target) throws InterruptedException {
         int size = dataSet.numberOfSentences();
         int numberOfBatch = ((size - 1) / batchSize) + 1;
 
@@ -83,13 +79,10 @@ public class CRFModel implements Serializable {
     public void optimize(DataSet dataSet) throws InterruptedException {
         int size = dataSet.numberOfSentences();
 
-        if(outputs == null){
+        if(outputs == null)
             this.outputs = new String[size][];
-            for(int i = 0; i < size; i++)
-                outputs[i] = new String[dataSet.get(i).length()];
-        }
 
-        forward(dataSet, outputs);
+        calc(dataSet, outputs);
 
         for(UniGram template : templates){
             for(int i = 0; i < size; i++){
@@ -147,8 +140,8 @@ public class CRFModel implements Serializable {
 
             for(int i = start; i <= end; i++){
                 Sentence sentence = dataSet.get(i);
-                if(outputs[i] == null)
-                    outputs[i] = new String[sentence.length()];
+                if(target[i] == null || target[i].length != sentence.length())
+                    target[i] = new String[sentence.length()];
 
                 int length = sentence.length();
 

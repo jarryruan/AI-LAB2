@@ -23,7 +23,11 @@ public class DataSet {
             if(line.trim().length() > 0){
                 String[] segments = line.split(" ");
                 words.add(segments[0]);
-                tags.add(segments[1]);
+                
+                if(segments.length > 1)
+                    tags.add(segments[1]);
+                else
+                    tags.add("NIL");
 
             }else {
                 if(!words.isEmpty()){

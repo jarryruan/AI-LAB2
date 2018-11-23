@@ -39,7 +39,7 @@ public class Main {
 
         System.out.println("Loading dataset...");
         DataSet trainingSet = new DataSet(trainingSetPath);
-        CRFModel model = new CRFModel(batchSize, numberOfWorker, Utils.loadTemplates(templatesPath), Utils.loadSequence(tagsPath));
+        CRFModel model = new CRFModel(batchSize, numberOfWorker, Utils.loadTemplates(templatesPath), Utils.loadTags(tagsPath));
         model.init(trainingSet);
 
         System.out.println("Start training...");
@@ -65,14 +65,17 @@ public class Main {
             int task = getInputInteger("enter your task:", 1);
 
             if(task == 1){
-                String datasetPath = getInputString("enter test set path:", "test.utf8");
+                String datasetPath = getInputString("enter test set path", "test.utf8");
                 DataSet testSet = new DataSet(datasetPath);
                 float accuracy = model.accuracy(testSet, model.forward(testSet));
                 System.out.println(String.format("accuracy = %f", accuracy));
 
             }else if(task == 2){
-                String sequencePath = getInputString("enter sequence path:", "sequence.utf8");
-                String[] sequence = Utils.loadSequence(sequencePath);
+                String sequencePath = getInputString("enter sequence path", "sequence.utf8");
+                String outputPath = getInputString("enter output saving path", "out.utf8");
+                DataSet noTagDataset = new DataSet(sequencePath);
+                System.out.println("Writing output to disk...");
+                Utils.writeOutput(model.forward(noTagDataset), outputPath);
 
 
             }else if(task == 3){

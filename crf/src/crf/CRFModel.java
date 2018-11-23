@@ -1,40 +1,29 @@
+package crf;
+
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-public class CRFModel {
+public class CRFModel implements Serializable {
     private int batchSize;
     private int numberOfWorker;
-    private Unigram[] templates;
+    private UniGram[] templates;
     private String[] tags;
-    private DataSet dataSet;
     private Map<String, Sensor> sensors;
-    private String[][] outputs;
-    private String[][] export;
+    private transient String[][] outputs;
 
-    public CRFModel(int batchSize, int numberOfWorker, Unigram[] templates, String[] tags, DataSet dataSet) {
+    public CRFModel(int batchSize, int numberOfWorker, UniGram[] templates, String[] tags) {
         this.batchSize = batchSize;
         this.numberOfWorker = numberOfWorker;
         this.templates = templates;
         this.tags = tags;
-        this.dataSet = dataSet;
         this.sensors = new HashMap<>();
-
-        int size = dataSet.numberOfSentences();
-        this.outputs = new String[size][];
-        for(int i = 0; i < size; i++)
-            outputs[i] = new String[dataSet.get(i).length()];
-
-        initSensors();
     }
 
-    public CRFModel(Unigram[] templates, String[] tags, DataSet dataSet) {
-        this(100, 5, templates, tags, dataSet);
-    }
-
-    public Unigram[] getTemplates() {
+    public UniGram[] getTemplates() {
         return templates;
     }
 
@@ -42,17 +31,18 @@ public class CRFModel {
         return tags;
     }
 
-    public DataSet getDataSet() {
-        return dataSet;
-    }
-
     public String[][] getOutputs() {
         return outputs;
     }
 
-    private void initSensors(){
+    public Map<String, Sensor> getSensors() {
+        return sensors;
+    }
+
+    public void init(DataSet dataSet){
         int size = dataSet.numberOfSentences();
-        for(Unigram template : templates){
+
+        for(UniGram template : templates){
             for(int i = 0; i < size; i++){
                 Sentence sentence = dataSet.get(i);
                 int length = sentence.length();
@@ -65,18 +55,18 @@ public class CRFModel {
         }
     }
 
-    public String[][] apply(DataSet testSet) throws InterruptedException {
+    public String[][] forward(DataSet testSet) throws InterruptedException {
         int size = testSet.numberOfSentences();
-        export = new String[size][];
+        String[][] export = new String[size][];
         for(int i = 0; i < size; i++){
             int length = testSet.get(i).length();
             export[i] = new String[length];
         }
-        calc(testSet, export);
+        forward(testSet, export);
         return export;
     }
 
-    private void calc(DataSet dataSet, String[][] target) throws InterruptedException {
+    private void forward(DataSet dataSet, String[][] target) throws InterruptedException {
         int size = dataSet.numberOfSentences();
         int numberOfBatch = ((size - 1) / batchSize) + 1;
 
@@ -90,14 +80,18 @@ public class CRFModel {
     }
 
 
-    public void forward() throws InterruptedException {
-        calc(dataSet, outputs);
-    }
-
-
-    public void backward(){
+    public void optimize(DataSet dataSet) throws InterruptedException {
         int size = dataSet.numberOfSentences();
-        for(Unigram template : templates){
+
+        if(outputs == null){
+            this.outputs = new String[size][];
+            for(int i = 0; i < size; i++)
+                outputs[i] = new String[dataSet.get(i).length()];
+        }
+
+        forward(dataSet, outputs);
+
+        for(UniGram template : templates){
             for(int i = 0; i < size; i++){
                 Sentence sentence = dataSet.get(i);
                 int length = sentence.length();
@@ -111,6 +105,25 @@ public class CRFModel {
                 }
             }
         }
+    }
+
+    public float accuracy(DataSet dataSet, String[][] outputs){
+        int size = dataSet.numberOfSentences();
+        int total = 0;
+        int correct = 0;
+
+        for(int i = 0; i < size; i++){
+            Sentence sentence = dataSet.get(i);
+            int length = sentence.length();
+            total += sentence.length();
+
+            for(int j = 0; j < length; j++){
+                if(outputs[i][j].equals(sentence.getTag(j)))
+                    correct++;
+            }
+        }
+
+        return 1.0f * correct / total;
     }
 
 
@@ -145,7 +158,7 @@ public class CRFModel {
 
                     for(String tag : tags){
                         int score = 0;
-                        for(Unigram template : templates){
+                        for(UniGram template : templates){
                             String feature = template.feature(sentence, j);
                             if(sensors.containsKey(feature)){
                                 score += sensors.get(feature).evaluate(feature, tag);

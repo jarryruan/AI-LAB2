@@ -1,7 +1,10 @@
+package crf;
+
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Sensor {
+public class Sensor implements Serializable {
     private String feature;
     private Map<String, Integer> weights;
 

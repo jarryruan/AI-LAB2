@@ -1,8 +1,12 @@
-public class Unigram {
+package crf;
+
+import java.io.Serializable;
+
+public class UniGram implements Serializable {
     private String prefix;
     private int[] context;
 
-    public Unigram(String prefix, int[] context) {
+    public UniGram(String prefix, int[] context) {
         this.prefix = prefix;
         this.context = context;
     }
@@ -23,7 +27,7 @@ public class Unigram {
         this.context = context;
     }
 
-    public String feature(Sentence sentence, int index){
+    String feature(Sentence sentence, int index){
         StringBuilder stringBuilder = new StringBuilder(prefix);
         stringBuilder.append(':');
 

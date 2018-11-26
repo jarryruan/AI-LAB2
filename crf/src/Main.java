@@ -86,7 +86,7 @@ public class Main {
     }
 
     public static void main(String[] args) throws IOException, InterruptedException, ClassNotFoundException {
-        System.out.println("(1) Train New Model");
+        System.out.println("(1) Train New CRF Model");
         System.out.println("(2) Load Exist Model");
         System.out.println("(3) Exit\n");
 

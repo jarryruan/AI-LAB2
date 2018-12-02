@@ -39,15 +39,24 @@ public class Utils {
         }
     }
 
-    public static void writeOutput(String[][] output, String filename) throws IOException {
-        try(DataOutputStream out = new DataOutputStream(new FileOutputStream(filename))){
-            for(String[] sentence : output){
-                for(String tag : sentence){
-                    out.writeChars(tag);
-                    out.writeChar('\n');
-                }
-                out.writeChar('\n');
+    public static void writeOutput(DataSet dataSet, String[][] output, String filename) throws IOException {
+        StringBuilder builder = new StringBuilder();
+        int size = output.length;
+        for(int i = 0;i < size; i++){
+            Sentence sentence = dataSet.get(i);
+            String[] tags = output[i];
+            int len = sentence.length();
+            for(int j = 0; j < len; j++){
+                String word = sentence.getWord(j);
+                String tag = tags[j];
+                builder.append(word);
+                if(j != len - 1 && (tag.equals("S") || tag.equals("E")))
+                    builder.append(" ");
             }
+            builder.append('\n');
+        }
+        try(BufferedWriter out = new BufferedWriter(new FileWriter(filename))){
+            out.write(builder.toString());
         }
     }
 

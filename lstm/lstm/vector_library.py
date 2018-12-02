@@ -1,6 +1,6 @@
 import torch
 
-
+# 向量库
 class VectorLibrary:
     def __init__(self, filename, encoding='utf8', device=torch.device('cpu')):
         self.data = dict()

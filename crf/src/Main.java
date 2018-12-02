@@ -1,3 +1,4 @@
+import com.sun.org.apache.xpath.internal.operations.Mod;
 import crf.CRFModel;
 import crf.DataSet;
 import crf.Utils;
@@ -28,7 +29,14 @@ public class Main {
         else return defaultValue;
     }
 
-    private static void train() throws IOException, InterruptedException {
+    private static void train(CRFModel model, DataSet trainingSet, int epoch) throws InterruptedException {
+        for(int i = 0; i < epoch; i ++){
+            model.optimize(trainingSet);
+            System.out.println(String.format("epoch = %d, accuracy = %f", i + 1, model.accuracy(trainingSet, model.getOutputs())));
+        }
+    }
+
+    private static void newModel() throws IOException, InterruptedException {
         String trainingSetPath = getInputString("enter training set path", "train.utf8");
         String savingPath = getInputString("enter model saving location", "model.crf");
         String templatesPath = getInputString("enter template path:", "template.utf8");
@@ -43,11 +51,9 @@ public class Main {
         model.init(trainingSet);
 
         System.out.println("Start training...");
-        for(int i = 0; i < epoch; i ++){
-            model.optimize(trainingSet);
-            System.out.println(String.format("epoch = %d, accuracy = %f", i + 1, model.accuracy(trainingSet, model.getOutputs())));
-        }
-        
+        train(model, trainingSet, epoch);
+
+        System.out.println("Saving model...");
         Utils.writeObject(model, savingPath);
     }
 
@@ -60,7 +66,8 @@ public class Main {
         while(true){
             System.out.println("(1) Test Test Set Accuracy");
             System.out.println("(2) Calculate Sequence Output");
-            System.out.println("(3) Exit\n");
+            System.out.println("(3) Go on training");
+            System.out.println("(4) Exit\n");
 
             int task = getInputInteger("enter your task:", 1);
 
@@ -75,10 +82,22 @@ public class Main {
                 String outputPath = getInputString("enter output saving path", "out.utf8");
                 DataSet noTagDataset = new DataSet(sequencePath);
                 System.out.println("Writing output to disk...");
-                Utils.writeOutput(model.forward(noTagDataset), outputPath);
+                Utils.writeOutput(noTagDataset, model.forward(noTagDataset), outputPath);
 
 
             }else if(task == 3){
+                String trainingSetPath = getInputString("enter training set path", "train.utf8");
+                int epoch = getInputInteger("enter number of iteration", 10);
+                DataSet trainingSet = new DataSet(trainingSetPath);
+
+                System.out.println("Start training...");
+                train(model, trainingSet, epoch);
+
+                System.out.println("Saving model...");
+                Utils.writeObject(model, modelPath);
+                break;
+
+            }else if(task == 4){
                 break;
             }
         }
@@ -94,7 +113,7 @@ public class Main {
 
         switch (task){
             case 1:
-                train();
+                newModel();
                 break;
             case 2:
                 load();

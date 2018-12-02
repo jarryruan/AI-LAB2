@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="crf:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/crf_jar</output-path>
+    <root id="archive" name="crf.jar">
+      <element id="module-output" name="crf" />
+    </root>
+  </artifact>
+</component>

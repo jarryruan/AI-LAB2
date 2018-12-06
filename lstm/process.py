@@ -34,6 +34,7 @@ def outputs(model, test_set, output_path):
                 print('complete: %f%%' % (i / n * 100))
             sentence_in = test_set.prepare_word_sequence(sentence)
             _, tagsets = model(sentence_in)
+            test_set.tag_to_ix = model.tag_to_ix
             tagsets = test_set.tag_idxs_to_sequence(tagsets)
 
             length = len(sentence)

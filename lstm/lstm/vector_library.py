@@ -18,7 +18,8 @@ class VectorLibrary:
         if(key in self.data.keys()):
             return self.data[key]
         else:
-            return torch.randn(self.vector_dim, device=self.device)
+            self.data[key] = torch.randn(self.vector_dim, device=self.device)
+            return self.data[key]
     
     def __len__(self):
         return len(self.data)
